@@ -9,5 +9,7 @@ export async function GET(req: NextRequest) {
   const name = p.get("name");
   if (!world || !name)
     return NextResponse.json({ error: "world e name obrigatorios" }, { status: 400 });
-  return NextResponse.json({ world, name, series: await getPlayer(world, name) });
+  const series = await getPlayer(world, name.trim());
+  const canonical = series[0]?.name || name.trim();
+  return NextResponse.json({ world, name: canonical, series });
 }

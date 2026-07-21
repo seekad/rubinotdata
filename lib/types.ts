@@ -24,6 +24,7 @@ export type BoardRow = {
 };
 
 export type PlayerPoint = {
+  name?: string;
   game_day: string;
   level: number | null;
   experience: number | null;

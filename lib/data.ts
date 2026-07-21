@@ -67,11 +67,12 @@ const supabaseBackend = {
     const c = await sb();
     const { data } = await c
       .from("daily_gains")
-      .select("game_day, level, experience, xp_gained")
+      .select("name, game_day, level, experience, xp_gained")
       .eq("world", world)
-      .eq("name", name)
+      .ilike("name", name) // case-insensitive (sem curinga = match exato)
       .order("game_day", { ascending: true });
     return (data ?? []).map((r: any) => ({
+      name: r.name,
       game_day: String(r.game_day),
       level: r.level,
       experience: r.experience,
@@ -146,9 +147,10 @@ const postgresBackend = {
   },
   async player(world: string, name: string): Promise<PlayerPoint[]> {
     return (await q(
-      `SELECT game_day::text AS game_day, level,
+      `SELECT name, game_day::text AS game_day, level,
          experience::float8 AS experience, xp_gained::float8 AS xp_gained
-       FROM daily_gains WHERE world = $1 AND name = $2 ORDER BY game_day ASC`,
+       FROM daily_gains WHERE world = $1 AND lower(name) = lower($2)
+       ORDER BY game_day ASC`,
       [world, name]
     )) as PlayerPoint[];
   },
@@ -238,9 +240,9 @@ const sqliteBackend = {
     const db = await sqlite();
     const rows = db
       .prepare(
-        `SELECT game_day, level, experience,
+        `SELECT name, game_day, level, experience,
            experience - LAG(experience) OVER (PARTITION BY name ORDER BY game_day) AS xp_gained
-         FROM player_days WHERE world = ? AND name = ? ORDER BY game_day ASC`
+         FROM player_days WHERE world = ? AND lower(name) = lower(?) ORDER BY game_day ASC`
       )
       .all(world, name) as any[];
     return rows;

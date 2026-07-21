@@ -14,6 +14,8 @@ const VIEWS: { key: View; label: string; name?: string; days?: number }[] = [
   { key: "board", label: "🏆 Ranking total" },
 ];
 
+const VOC_LIST = ["None", "Sorcerers", "Druids", "Paladins", "Knights", "Monks"];
+
 function VocBadge({ v }: { v: string | null }) {
   if (!v) return null;
   const c = VOC_COLORS[v] ?? "var(--muted)";
@@ -40,6 +42,14 @@ export default function Page() {
 
   const [search, setSearch] = useState("");
   const [player, setPlayer] = useState<{ name: string; series: PlayerPoint[] } | null>(null);
+  const [vocSel, setVocSel] = useState<Set<string>>(new Set(VOC_LIST));
+
+  const toggleVoc = (v: string) =>
+    setVocSel((prev) => {
+      const n = new Set(prev);
+      n.has(v) ? n.delete(v) : n.add(v);
+      return n;
+    });
 
   useEffect(() => {
     fetch("/api/meta")
@@ -97,10 +107,13 @@ export default function Page() {
       const d = await fetch(
         `/api/player?world=${encodeURIComponent(world)}&name=${encodeURIComponent(name)}`
       ).then((r) => r.json());
-      setPlayer({ name, series: d.series ?? [] });
+      setPlayer({ name: d.name || name, series: d.series ?? [] });
     },
     [world]
   );
+
+  const shownRows = rows.filter((r) => !r.vocation || vocSel.has(r.vocation));
+  const shownBoard = board.filter((r) => !r.vocation || vocSel.has(r.vocation));
 
   const xpLabel = view === "day" ? "XP no dia" : "XP no período";
   const emptyMsg =
@@ -116,23 +129,20 @@ export default function Page() {
             ⚔️ RubinotData
           </h1>
           <span className="text-xs text-[var(--muted)]">XP por dia · server save</span>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (search.trim()) openPlayer(search.trim());
-              }}
-            >
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="buscar jogador…"
-                className="w-44 rounded-lg border border-[var(--line)] bg-[var(--panel)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
-              />
-            </form>
-            <Select value={world} onChange={setWorld} options={worlds} />
-            <Select value={day} onChange={setDay} options={days} />
-          </div>
+          <form
+            className="ml-auto"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (search.trim()) openPlayer(search.trim());
+            }}
+          >
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="buscar jogador…"
+              className="w-52 rounded-lg border border-[var(--line)] bg-[var(--panel)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+            />
+          </form>
         </div>
       </header>
 
@@ -141,6 +151,15 @@ export default function Page() {
           <PlayerPanel world={world} data={player} onClose={() => setPlayer(null)} />
         ) : (
           <>
+            {/* Filtros: mundo, dia e vocações juntos */}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Select value={world} onChange={setWorld} options={worlds} />
+              <Select value={day} onChange={setDay} options={days} />
+              <div className="mx-1 hidden h-6 w-px bg-[var(--line)] sm:block" />
+              <VocationFilter sel={vocSel} onToggle={toggleVoc} />
+            </div>
+
+            {/* Abas de período */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {VIEWS.map((v) => (
                 <Tab key={v.key} on={view === v.key} onClick={() => setView(v.key)}>
@@ -161,10 +180,10 @@ export default function Page() {
             {loading ? (
               <Note>carregando…</Note>
             ) : view === "board" ? (
-              <BoardView rows={board} onPlayer={openPlayer} />
+              <BoardView rows={shownBoard} onPlayer={openPlayer} />
             ) : (
               <RankTable
-                rows={rows}
+                rows={shownRows}
                 xpLabel={xpLabel}
                 emptyMsg={emptyMsg}
                 onPlayer={openPlayer}
@@ -204,6 +223,41 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+function VocationFilter({
+  sel,
+  onToggle,
+}: {
+  sel: Set<string>;
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {VOC_LIST.map((v) => {
+        const on = sel.has(v);
+        return (
+          <button
+            key={v}
+            onClick={() => onToggle(v)}
+            title={on ? `Ocultar ${v}` : `Mostrar ${v}`}
+            className={
+              "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition " +
+              (on
+                ? "border-[var(--gold)] bg-[#221a10] text-[var(--txt)]"
+                : "border-[var(--line)] text-[var(--muted)] opacity-70 hover:opacity-100")
+            }
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: on ? VOC_COLORS[v] ?? "var(--muted)" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1px var(--muted)" }}
+            />
+            {v}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
