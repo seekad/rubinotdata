@@ -486,8 +486,10 @@ function StatTile({ label, value }: { label: string; value: number | null | unde
 }
 
 function Th({ children }: { children: React.ReactNode }) {
+  // Sem forcar text-left: cada <td> controla seu alinhamento (as colunas
+  // numericas usam text-right para ficar sobre os valores).
   return (
-    <tr className="[&>td]:px-4 [&>td]:py-2.5 [&>td]:text-left [&>td]:text-[11px] [&>td]:font-semibold [&>td]:uppercase [&>td]:tracking-wide [&>td]:text-[var(--muted)]">
+    <tr className="[&>td]:px-4 [&>td]:py-2.5 [&>td]:text-[11px] [&>td]:font-semibold [&>td]:uppercase [&>td]:tracking-wide [&>td]:text-[var(--muted)]">
       {children}
     </tr>
   );
