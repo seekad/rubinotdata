@@ -1,0 +1,43 @@
+name: Coleta diária (XP)
+
+on:
+  schedule:
+    - cron: "15 13 * * *" # 10:15 BRT (13:15 UTC) — após o server save das 10:00
+  workflow_dispatch: {} # permite rodar manualmente na aba Actions
+
+concurrency:
+  group: scrape-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache do Chromium (Playwright)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium
+
+      - name: Instalar Chromium + xvfb
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y xvfb
+
+      - name: Coletar (headful via xvfb)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: xvfb-run -a --server-args="-screen 0 1366x900x24" node scripts/scrape.mjs

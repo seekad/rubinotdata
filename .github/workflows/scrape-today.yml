@@ -1,0 +1,43 @@
+name: Coleta exp_today (Hoje)
+
+on:
+  schedule:
+    - cron: "0,30 * * * *" # a cada 30 min — placar "Hoje" ao vivo
+  workflow_dispatch: {}
+
+concurrency:
+  group: scrape-today
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  today:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache do Chromium (Playwright)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium
+
+      - name: Instalar Chromium + xvfb
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y xvfb
+
+      - name: Coletar exp_today (headful via xvfb)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: xvfb-run -a --server-args="-screen 0 1366x900x24" node scripts/scrape-today.mjs
