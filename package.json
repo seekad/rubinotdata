@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "scrape": "node scripts/scrape.mjs",
-    "scrape:xvfb": "xvfb-run -a --server-args=\"-screen 0 1366x900x24\" node scripts/scrape.mjs"
+    "scrape:xvfb": "xvfb-run -a --server-args=\"-screen 0 1366x900x24\" node scripts/scrape.mjs",
+    "scrape-today": "node scripts/scrape-today.mjs",
+    "scrape-today:xvfb": "xvfb-run -a --server-args=\"-screen 0 1366x900x24\" node scripts/scrape-today.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",

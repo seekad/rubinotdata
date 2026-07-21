@@ -90,6 +90,9 @@ O script instala Node 22, xvfb, o Chromium do Playwright, e cria:
 - `deploy/rubinot-scrape.timer` — dispara **10:15 America/Sao_Paulo** (15 min
   após o server save das 10:00, para a API atualizar; fuso explícito, funciona
   com o VPS em UTC).
+- `deploy/rubinot-today.service` + `.timer` — coleta o **exp_today** (XP de
+  hoje) a cada **30 min**, alimentando o placar **"Hoje" ao vivo** do site
+  (tabela `exp_today`, upsert com `GREATEST` = pico do dia).
 
 ```bash
 systemctl list-timers rubinot-scrape.timer   # próximo disparo

@@ -1,0 +1,11 @@
+[Unit]
+Description=RubinotData — dispara a coleta do exp_today a cada 30 min
+
+[Timer]
+# A cada 30 minutos (placar "Hoje" ao vivo). Ajuste as horas se quiser rodar
+# so em horario de pico. Fuso explicito.
+OnCalendar=*-*-* *:00,30:00 America/Sao_Paulo
+RandomizedDelaySec=90
+
+[Install]
+WantedBy=timers.target

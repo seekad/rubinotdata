@@ -46,6 +46,28 @@ drop policy if exists "leitura publica" on player_days;
 create policy "leitura publica" on player_days
   for select using (true);
 
+-- XP "de hoje" (exp_today do Rubinot), para o placar ao vivo. O scraper roda
+-- a cada ~30 min e faz UPSERT com GREATEST(value) — como o exp_today so cresce
+-- ate o server save, o valor guardado eh o pico do dia (= XP de hoje atual).
+create table if not exists exp_today (
+  world       text   not null,
+  game_day    date   not null,
+  name        text   not null,
+  level       integer,
+  value       bigint,             -- XP ganho hoje (desde o server save)
+  vocation    text,
+  voc_id      integer,
+  rank        integer,
+  updated_at  timestamptz not null default now(),
+  primary key (world, game_day, name)
+);
+create index if not exists idx_exp_today_rank on exp_today (world, game_day, value desc);
+
+alter table exp_today enable row level security;
+drop policy if exists "leitura publica exp_today" on exp_today;
+create policy "leitura publica exp_today" on exp_today for select using (true);
+grant select on exp_today to anon, authenticated;
+
 -- Ranking por periodo (semana/mes): soma os ganhos diarios no intervalo.
 -- Com coleta diaria, sum(xp_gained) telescopa para exp(fim) - exp(inicio).
 create or replace function period_gains(p_world text, p_start date, p_end date)

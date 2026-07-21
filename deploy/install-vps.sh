@@ -53,19 +53,22 @@ if [ ! -f deploy/rubinot.env ]; then
 fi
 
 echo ">> [5/6] Instalando unidades systemd..."
-chmod +x deploy/run-scrape.sh
-for unit in rubinot-scrape.service rubinot-scrape.timer; do
+chmod +x deploy/run-scrape.sh deploy/run-today.sh
+for unit in rubinot-scrape.service rubinot-scrape.timer \
+            rubinot-today.service rubinot-today.timer; do
   sed -e "s#__DIR__#$APP_DIR#g" -e "s#__USER__#$APP_USER#g" \
     "deploy/$unit" | sudo tee "/etc/systemd/system/$unit" >/dev/null
 done
 sudo systemctl daemon-reload
-sudo systemctl enable --now rubinot-scrape.timer
+sudo systemctl enable --now rubinot-scrape.timer   # coleta diaria (server save)
+sudo systemctl enable --now rubinot-today.timer    # exp_today a cada 30 min
 
 echo ">> [6/6] Pronto!"
-echo "   Proxima execucao:"
-systemctl list-timers rubinot-scrape.timer --no-pager || true
+echo "   Proximas execucoes:"
+systemctl list-timers rubinot-scrape.timer rubinot-today.timer --no-pager || true
 echo
 echo "Comandos uteis:"
-echo "  sudo systemctl start rubinot-scrape.service   # rodar agora (teste)"
-echo "  journalctl -u rubinot-scrape.service -f       # ver logs"
-echo "  systemctl list-timers rubinot-scrape.timer    # proximo disparo"
+echo "  sudo systemctl start rubinot-scrape.service   # coleta diaria agora (teste)"
+echo "  sudo systemctl start rubinot-today.service    # coleta exp_today agora (teste)"
+echo "  journalctl -u rubinot-today.service -f        # ver logs do placar Hoje"
+echo "  systemctl list-timers 'rubinot-*'             # proximos disparos"

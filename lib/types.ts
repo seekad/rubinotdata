@@ -23,6 +23,13 @@ export type BoardRow = {
   experience: number | null;
 };
 
+export type TodayResult = {
+  world: string;
+  day: string | null;
+  updatedAt: string | null;
+  rows: GainRow[];
+};
+
 export type PlayerPoint = {
   name?: string;
   game_day: string;

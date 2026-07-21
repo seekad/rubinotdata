@@ -3,6 +3,7 @@ import type {
   GainRow,
   BoardRow,
   PlayerPoint,
+  TodayResult,
 } from "./types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -88,6 +89,26 @@ const supabaseBackend = {
     });
     return ((data ?? []) as any[]).map(mapGain);
   },
+  async today(world: string): Promise<TodayResult> {
+    const c = await sb();
+    const { data: dd } = await c
+      .from("exp_today")
+      .select("game_day")
+      .eq("world", world)
+      .order("game_day", { ascending: false })
+      .limit(1);
+    const day = dd?.[0]?.game_day ? String(dd[0].game_day) : null;
+    if (!day) return { world, day: null, updatedAt: null, rows: [] };
+    const { data } = await c
+      .from("exp_today")
+      .select("name, level, vocation, voc_id, rank, value, updated_at")
+      .eq("world", world)
+      .eq("game_day", day)
+      .order("value", { ascending: false })
+      .limit(1000);
+    const rows = (data ?? []) as any[];
+    return { world, day, updatedAt: maxUpdatedAt(rows), rows: rows.map(mapToday) };
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -162,6 +183,24 @@ const postgresBackend = {
       [world, start, end]
     );
     return rows.map(mapGain);
+  },
+  async today(world: string): Promise<TodayResult> {
+    const rows = await q(
+      `SELECT name, level, vocation, voc_id, rank, value, updated_at,
+         game_day::text AS game_day
+       FROM exp_today
+       WHERE world = $1 AND game_day = (
+         SELECT max(game_day) FROM exp_today WHERE world = $1
+       )
+       ORDER BY value DESC LIMIT 1000`,
+      [world]
+    );
+    return {
+      world,
+      day: rows[0]?.game_day ?? null,
+      updatedAt: maxUpdatedAt(rows),
+      rows: rows.map(mapToday),
+    };
   },
 };
 
@@ -252,6 +291,27 @@ const sqliteBackend = {
     const rows = db.prepare(PERIOD_SQL).all(world, start, end) as any[];
     return rows.map(mapGain);
   },
+  async today(world: string): Promise<TodayResult> {
+    try {
+      const db = await sqlite();
+      const rows = db
+        .prepare(
+          `SELECT name, level, vocation, voc_id, rank, value, updated_at, game_day
+           FROM exp_today
+           WHERE world = ? AND game_day = (SELECT max(game_day) FROM exp_today WHERE world = ?)
+           ORDER BY value DESC LIMIT 1000`
+        )
+        .all(world, world) as any[];
+      return {
+        world,
+        day: rows[0]?.game_day ?? null,
+        updatedAt: maxUpdatedAt(rows),
+        rows: rows.map(mapToday),
+      };
+    } catch {
+      return { world, day: null, updatedAt: null, rows: [] };
+    }
+  },
 };
 
 const PERIOD_SQL = `
@@ -280,6 +340,27 @@ function mapGain(r: any): GainRow {
   };
 }
 
+// exp_today -> shape de GainRow (xp_gained = value do dia)
+function mapToday(r: any): GainRow {
+  return {
+    name: r.name,
+    level: r.level,
+    vocation: r.vocation,
+    voc_id: r.voc_id ?? null,
+    rank: r.rank ?? null,
+    experience: null,
+    xp_gained: Number(r.value),
+    levels_gained: null,
+  };
+}
+
+function maxUpdatedAt(rows: any[]): string | null {
+  if (!rows.length) return null;
+  return new Date(
+    Math.max(...rows.map((r) => +new Date(r.updated_at)))
+  ).toISOString();
+}
+
 // ---------------------------------------------------------------------------
 
 const backend = useSupabase
@@ -297,4 +378,5 @@ export const getPlayer = (world: string, name: string) =>
   backend.player(world, name);
 export const getPeriodGains = (world: string, start: string, end: string) =>
   backend.periodGains(world, start, end);
+export const getToday = (world: string) => backend.today(world);
 export const dataSource = useSupabase ? "supabase" : usePg ? "postgres" : "sqlite";

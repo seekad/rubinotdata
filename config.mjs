@@ -11,9 +11,6 @@ export const config = {
   // 0=Todas, 1=None, 2=Sorcerers, 3=Druids, 4=Paladins, 5=Knights, 9=Monks
   vocations: [1, 2, 3, 4, 5, 9],
 
-  // Tambem coletar o ranking "Exp Hoje" do site (cross-check). Opcional.
-  alsoExpToday: false,
-
   // Server save do servidor (horario local). Define o "dia de jogo".
   serverSaveHour: 10,
   serverSaveMinute: 0,

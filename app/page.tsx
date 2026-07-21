@@ -5,9 +5,10 @@ import { fmt, fmtShort, VOC_COLORS } from "@/lib/format";
 import type { GainRow, BoardRow, PlayerPoint } from "@/lib/types";
 
 type Meta = { worlds: string[]; days: string[]; source: string };
-type View = "day" | "d7" | "d30" | "board";
+type View = "today" | "day" | "d7" | "d30" | "board";
 
 const VIEWS: { key: View; label: string; name?: string; days?: number }[] = [
+  { key: "today", label: "🔥 Hoje" },
   { key: "day", label: "📈 Dia" },
   { key: "d7", label: "🗓️ Semana", name: "Semana", days: 7 },
   { key: "d30", label: "📅 Mês", name: "Mês", days: 30 },
@@ -32,7 +33,7 @@ export default function Page() {
   const [world, setWorld] = useState<string>("");
   const [days, setDays] = useState<string[]>([]);
   const [day, setDay] = useState<string>("");
-  const [view, setView] = useState<View>("day");
+  const [view, setView] = useState<View>("today");
   const [source, setSource] = useState<string>("");
 
   const [rows, setRows] = useState<GainRow[]>([]);
@@ -72,8 +73,25 @@ export default function Page() {
   }, [world]);
 
   const loadData = useCallback(async () => {
-    if (!world || !day) return setLoading(false);
+    if (!world) return setLoading(false);
     setLoading(true);
+    if (view === "today") {
+      const t = await fetch(
+        `/api/today?world=${encodeURIComponent(world)}`
+      ).then((r) => r.json());
+      setRows(t.rows ?? []);
+      const hora = t.updatedAt
+        ? new Date(t.updatedAt).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Sao_Paulo",
+          })
+        : null;
+      setPill(hora ? `Hoje · atualizado ${hora}` : t.day ? `Hoje · ${t.day}` : "");
+      setLoading(false);
+      return;
+    }
+    if (!day) return setLoading(false);
     const qs = `world=${encodeURIComponent(world)}&day=${day}`;
     if (view === "board") {
       const b = await fetch(`/api/leaderboard?${qs}`).then((r) => r.json());
@@ -115,9 +133,12 @@ export default function Page() {
   const shownRows = rows.filter((r) => !r.vocation || vocSel.has(r.vocation));
   const shownBoard = board.filter((r) => !r.vocation || vocSel.has(r.vocation));
 
-  const xpLabel = view === "day" ? "XP no dia" : "XP no período";
+  const xpLabel =
+    view === "today" ? "XP hoje" : view === "day" ? "XP no dia" : "XP no período";
   const emptyMsg =
-    view === "day"
+    view === "today"
+      ? "Sem coleta de hoje ainda — o placar 'Hoje' aparece após a primeira coleta pós-server save."
+      : view === "day"
       ? "Sem comparação ainda — preciso de 2 dias de coleta. Os números aparecem após o próximo server save."
       : "Sem dados suficientes no período ainda. Colete por alguns dias.";
 
@@ -154,7 +175,9 @@ export default function Page() {
             {/* Filtros: mundo, dia e vocações juntos */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <Select value={world} onChange={setWorld} options={worlds} />
-              <Select value={day} onChange={setDay} options={days} />
+              {view !== "today" && (
+                <Select value={day} onChange={setDay} options={days} />
+              )}
               <div className="mx-1 hidden h-6 w-px bg-[var(--line)] sm:block" />
               <VocationFilter sel={vocSel} onToggle={toggleVoc} />
             </div>

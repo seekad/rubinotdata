@@ -1,0 +1,19 @@
+[Unit]
+Description=RubinotData — coleta do exp_today (placar "Hoje" ao vivo)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=__DIR__
+EnvironmentFile=__DIR__/deploy/rubinot.env
+ExecStart=__DIR__/deploy/run-today.sh
+
+TimeoutStartSec=600
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
