@@ -1,8 +1,10 @@
 name: Coleta diária (XP)
 
 on:
-  schedule:
-    - cron: "15 13 * * *" # 10:15 BRT (13:15 UTC) — após o server save das 10:00
+  # schedule desativado: o Cloudflare bloqueia o IP de datacenter do GitHub
+  # Actions. Rode num IP residencial (ver README > Deploy no VPS/maquina local).
+  # schedule:
+  #   - cron: "15 13 * * *"
   workflow_dispatch: {} # permite rodar manualmente na aba Actions
 
 concurrency:

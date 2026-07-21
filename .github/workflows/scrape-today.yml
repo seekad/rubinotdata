@@ -1,8 +1,10 @@
 name: Coleta exp_today (Hoje)
 
 on:
-  schedule:
-    - cron: "0,30 * * * *" # a cada 30 min — placar "Hoje" ao vivo
+  # schedule desativado: o Cloudflare bloqueia o IP de datacenter do GitHub
+  # Actions. Rode num IP residencial (ver README > Deploy no VPS/maquina local).
+  # schedule:
+  #   - cron: "0,30 * * * *"
   workflow_dispatch: {}
 
 concurrency:
