@@ -1,0 +1,16 @@
+[Unit]
+Description=RubinotData — dispara a coleta logo apos o server save
+
+[Timer]
+# Server save do Rubinot as 10:00 (horario de Brasilia). Coletamos 10:15 para
+# dar tempo do save terminar e a API/cache atualizar pos-save.
+# O fuso vai explicito, entao funciona mesmo com o VPS em UTC.
+OnCalendar=*-*-* 10:15:00 America/Sao_Paulo
+
+# se o VPS estava desligado na hora, roda assim que ligar
+Persistent=true
+# jitter para nao bater exatamente no mesmo segundo
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

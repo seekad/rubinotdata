@@ -1,0 +1,22 @@
+[Unit]
+Description=RubinotData — coleta de highscores (XP diaria)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=__DIR__
+EnvironmentFile=__DIR__/deploy/rubinot.env
+ExecStart=__DIR__/deploy/run-scrape.sh
+
+# tolera lentidao do Cloudflare / rede + as 3 tentativas do wrapper
+TimeoutStartSec=1200
+
+# endurecimento basico
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

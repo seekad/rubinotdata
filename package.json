@@ -1,0 +1,30 @@
+{
+  "name": "rubinotdata",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Rastreador de XP diaria do Rubinot (Next.js + Supabase)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "scrape": "node scripts/scrape.mjs",
+    "scrape:xvfb": "xvfb-run -a --server-args=\"-screen 0 1366x900x24\" node scripts/scrape.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.1",
+    "next": "^15.1.6",
+    "pg": "^8.13.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "better-sqlite3": "^11.8.1",
+    "playwright": "^1.49.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3"
+  }
+}
