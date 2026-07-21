@@ -15,6 +15,7 @@ permissions:
 jobs:
   today:
     runs-on: ubuntu-latest
+    environment: Production # usa o secret DATABASE_URL do environment "Production"
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
